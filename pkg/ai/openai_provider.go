@@ -115,8 +115,17 @@ func (p *OpenAIAIProvider) GetReceiptInvoiceInfo(content string) (*interfaces.Re
    - For amounts in SEK: multiply by 100 (e.g., 95.37 SEK = 9537)
    - For amounts in EUR or other currencies: convert to SEK first using approximate rates (1 EUR ≈ 11.5 SEK), then to cents
    - Return null if no amount is found or if conversion is not possible
+7. Extract the original amount and currency information:
+   - OriginalAmount: The total amount as it appears in the document (e.g., 95.37 for "€95.37")
+   - OriginalCurrency: The ISO 3-letter currency code (e.g., "EUR", "USD", "SEK", "GBP")
+   - OriginalVatAmount: The VAT/tax amount in the original currency (e.g., 19.07 for "€19.07")
+8. Extract identification fields from the document:
+   - Look for invoice numbers, receipt numbers, customer IDs, order numbers, reference numbers, etc.
+   - Create IdField entries with descriptive names like "Invoice Number", "Receipt Number", "Customer ID"
+   - Extract the actual values associated with these identifiers
+   - Common patterns: "Invoice #123", "Receipt: ABC-456", "Order ID: 789", "Ref: XYZ"
 
-Be precise and extract only information that is clearly present in the document. The Description field is mandatory and must always be provided based on your analysis of the entire document.`
+Be precise and extract only information that is clearly present in the document. The Description field is mandatory and must always be provided based on your analysis of the entire document. All other fields are optional and should be null/empty if not found.`
 
 	userPrompt := fmt.Sprintf("Please analyze the following document and extract the required information:\n\n%s", content)
 
@@ -209,6 +218,31 @@ Be precise and extract only information that is clearly present in the document.
 		p.logger.Info("Extracted amount: %d öre (%.2f SEK)", *result.SECentAmount, float64(*result.SECentAmount)/100)
 	} else {
 		p.logger.Debug("No amount found in document")
+	}
+	
+	if result.OriginalAmount != nil && result.OriginalCurrency != nil {
+		p.logger.Info("Extracted original amount: %.2f %s", *result.OriginalAmount, *result.OriginalCurrency)
+	} else {
+		p.logger.Debug("No original amount/currency found in document")
+	}
+	
+	if result.OriginalVatAmount != nil {
+		currency := "unknown"
+		if result.OriginalCurrency != nil {
+			currency = *result.OriginalCurrency
+		}
+		p.logger.Info("Extracted original VAT amount: %.2f %s", *result.OriginalVatAmount, currency)
+	} else {
+		p.logger.Debug("No original VAT amount found in document")
+	}
+	
+	if len(result.IdFields) > 0 {
+		p.logger.Info("Extracted %d ID field(s):", len(result.IdFields))
+		for i, idField := range result.IdFields {
+			p.logger.Info("  [%d] %s: %s", i+1, idField.Name, idField.Value)
+		}
+	} else {
+		p.logger.Debug("No ID fields found in document")
 	}
 
 	p.logger.Info("Total processing time: %v", time.Since(startTime))

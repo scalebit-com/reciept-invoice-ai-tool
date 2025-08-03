@@ -141,7 +141,20 @@ The tool extracts structured information from receipts and invoices:
   "company": "Anthropic, PBC",
   "date_issued": "2025-08-02",
   "service_description": "Max plan - 5x subscription",
-  "se_cent_amount": 109677
+  "se_cent_amount": 109677,
+  "original_amount": 95.37,
+  "original_currency": "EUR",
+  "original_vat_amount": 19.07,
+  "id_fields": [
+    {
+      "name": "Receipt Number",
+      "value": "2844-5789-6006"
+    },
+    {
+      "name": "Invoice Number", 
+      "value": "D8F78A38-0007"
+    }
+  ]
 }
 ```
 
@@ -155,6 +168,12 @@ The tool extracts structured information from receipts and invoices:
 - `date_issued`: Optional - Date in YYYY-MM-DD format
 - `service_description`: Optional - Description of services or items
 - `se_cent_amount`: Optional - Amount in Swedish cents (öre), where last 2 digits are cents
+- `original_amount`: Optional - Total amount in original currency as it appears in document
+- `original_currency`: Optional - ISO 3-letter currency code (e.g., "EUR", "USD", "SEK")
+- `original_vat_amount`: Optional - VAT/tax amount in original currency
+- `id_fields`: Optional list of identification fields found in document:
+  - Each entry has `name` (identifier type) and `value` (actual identifier)
+  - Examples: Invoice Number, Receipt Number, Customer ID, Order Number
 
 ### Currency Handling
 - SEK amounts: multiply by 100 (95.37 SEK = 9537 öre)
@@ -193,3 +212,6 @@ This architecture allows easy addition of other AI providers (Anthropic Claude, 
 - ✅ Company extraction functionality
 - ✅ Currency conversion to Swedish cents
 - ✅ Document type classification (None/Invoice/Receipt)
+- ✅ Original amount and currency extraction
+- ✅ VAT amount extraction in original currency
+- ✅ ID field extraction (invoice numbers, receipt numbers, etc.)

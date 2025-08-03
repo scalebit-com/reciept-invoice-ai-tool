@@ -13,6 +13,9 @@ A CLI tool to extract structured information from text files or markdown files c
 - ✅ Comprehensive file validation (existence, binary detection, size limits)
 - 💰 Currency conversion to Swedish cents (öre)
 - 🏢 Company extraction from financial documents
+- 💵 Original amount and currency preservation
+- 🧾 VAT amount extraction in original currency
+- 🔢 ID field extraction (invoice numbers, receipt numbers, etc.)
 - 📝 Mandatory output file specification
 
 ## Installation
@@ -161,7 +164,20 @@ The tool outputs structured JSON containing extracted information:
   "company": "Anthropic, PBC",
   "date_issued": "2025-08-02",
   "service_description": "Max plan - 5x subscription",
-  "se_cent_amount": 109677
+  "se_cent_amount": 109677,
+  "original_amount": 95.37,
+  "original_currency": "EUR",
+  "original_vat_amount": 19.07,
+  "id_fields": [
+    {
+      "name": "Receipt Number",
+      "value": "2844-5789-6006"
+    },
+    {
+      "name": "Invoice Number",
+      "value": "D8F78A38-0007"
+    }
+  ]
 }
 ```
 
@@ -176,6 +192,12 @@ The tool outputs structured JSON containing extracted information:
 - **`date_issued`**: Optional - Date in YYYY-MM-DD format
 - **`service_description`**: Optional - Description of services or items
 - **`se_cent_amount`**: Optional - Amount in Swedish cents (öre), where last 2 digits are cents
+- **`original_amount`**: Optional - Total amount in original currency as it appears in document
+- **`original_currency`**: Optional - ISO 3-letter currency code (e.g., "EUR", "USD", "SEK")
+- **`original_vat_amount`**: Optional - VAT/tax amount in original currency
+- **`id_fields`**: Optional list of identification fields found in document:
+  - Each entry has `name` (identifier type) and `value` (actual identifier)
+  - Examples: Invoice Number, Receipt Number, Customer ID, Order Number
 
 ### Currency Handling
 
@@ -291,6 +313,9 @@ The project uses [Task](https://taskfile.dev/) for build automation. The main ta
 - ✅ **Document Classification** - Automatic classification of document types
 - ✅ **Company Extraction** - Extract company information from financial documents
 - ✅ **Currency Conversion** - Convert all currencies to Swedish cents (öre)
+- ✅ **Original Amount Preservation** - Extract and preserve original amounts and currencies
+- ✅ **VAT Amount Extraction** - Extract VAT/tax amounts in original currency
+- ✅ **ID Field Extraction** - Extract identification fields (invoice numbers, receipt numbers, etc.)
 - ✅ **Provider Pattern** - Extensible architecture for multiple AI providers
 
 ## Contributing

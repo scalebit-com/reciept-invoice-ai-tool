@@ -6,6 +6,15 @@ type AIProvider interface {
 	GetReceiptInvoiceInfo(content string) (*ReceiptInvoiceInfo, error)
 }
 
+// IdField represents an identification field found in the document
+type IdField struct {
+	// Name is the type/name of the identifier (e.g., "Invoice Number", "Receipt Number", "Customer ID")
+	Name string `json:"name" jsonschema_description:"The type or name of the identifier (e.g., 'Invoice Number', 'Receipt Number', 'Customer ID')"`
+	
+	// Value is the actual identifier value
+	Value string `json:"value" jsonschema_description:"The actual identifier value"`
+}
+
 // ReceiptInvoiceInfo represents the structured information extracted from a receipt or invoice
 type ReceiptInvoiceInfo struct {
 	// DocumentType is always present and classifies the document
@@ -27,4 +36,16 @@ type ReceiptInvoiceInfo struct {
 	// Last 2 digits are öre (cents), rest is kronor
 	// For example: 9537 = 95.37 SEK
 	SECentAmount *int `json:"se_cent_amount" jsonschema_description:"Amount in Swedish cents (öre), where last 2 digits are cents and rest is kronor, null if not found"`
+	
+	// OriginalAmount is the total amount in the original currency (nullable)
+	OriginalAmount *float64 `json:"original_amount" jsonschema_description:"The total amount in the original currency, null if not found"`
+	
+	// OriginalCurrency is the ISO 3-letter currency code (nullable)
+	OriginalCurrency *string `json:"original_currency" jsonschema_description:"The ISO 3-letter currency code (e.g., 'EUR', 'USD', 'SEK'), null if not found"`
+	
+	// OriginalVatAmount is the VAT amount in the original currency (nullable)
+	OriginalVatAmount *float64 `json:"original_vat_amount" jsonschema_description:"The VAT/tax amount in the original currency, null if not found"`
+	
+	// IdFields is a list of identification fields found in the document
+	IdFields []IdField `json:"id_fields" jsonschema_description:"List of identification fields found in the document (invoice numbers, receipt numbers, customer IDs, etc.). Can be empty."`
 }
