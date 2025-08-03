@@ -100,15 +100,23 @@ func (p *OpenAIAIProvider) GetReceiptInvoiceInfo(content string) (*interfaces.Re
 	// System prompt for the AI to act as an accountant
 	systemPrompt := `You are an experienced accountant reviewing financial documents. Your task is to:
 1. Classify the document as either "None" (not a financial document), "Invoice", or "Receipt"
-2. Extract the company name that is offering the service and requesting payment
-3. Extract the date the document was issued (in YYYY-MM-DD format)
-4. Extract a concise description of the service or items paid for
-5. Extract the total amount in Swedish currency (SEK) and convert it to Swedish cents (öre)
+2. Create a mandatory Description field (max 50 characters) by analyzing the ENTIRE document:
+   - For "None" documents: describe what the document is about (e.g., "Security notification email")
+   - For "Invoice/Receipt": provide generic accountant-friendly service category (e.g., "AI Services", "Cloud Services", "Computer Parts")
+   - Look at ALL context: document headers, company name, item rows, service names, branding
+   - Transform specific services to generic categories (e.g., "Claude Code MAX Plan" → "AI coding service")
+   - Use company identity as hints (e.g., "Anthropic" → AI services, "AWS" → Cloud services)
+   - Make holistic judgment from all available information in the document
+   - If unclear, reformat the service description more nicely but keep it generic and accountant-friendly
+3. Extract the company name that is offering the service and requesting payment
+4. Extract the date the document was issued (in YYYY-MM-DD format) 
+5. Extract a concise description of the service or items paid for
+6. Extract the total amount in Swedish currency (SEK) and convert it to Swedish cents (öre)
    - For amounts in SEK: multiply by 100 (e.g., 95.37 SEK = 9537)
    - For amounts in EUR or other currencies: convert to SEK first using approximate rates (1 EUR ≈ 11.5 SEK), then to cents
    - Return null if no amount is found or if conversion is not possible
 
-Be precise and extract only information that is clearly present in the document.`
+Be precise and extract only information that is clearly present in the document. The Description field is mandatory and must always be provided based on your analysis of the entire document.`
 
 	userPrompt := fmt.Sprintf("Please analyze the following document and extract the required information:\n\n%s", content)
 
@@ -177,6 +185,7 @@ Be precise and extract only information that is clearly present in the document.
 
 	p.logger.Info("Successfully parsed OpenAI response")
 	p.logger.Info("Extracted document type: %s", result.DocumentType)
+	p.logger.Info("Extracted description: %s", result.Description)
 	
 	if result.DateIssued != nil {
 		p.logger.Info("Extracted date: %s", *result.DateIssued)

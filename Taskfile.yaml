@@ -6,3 +6,17 @@ tasks:
     cmds:
       - mkdir -p target
       - go build -o target/reciept-invoice-ai-tool main.go
+
+  run:
+    desc: Process all sample MD files and generate JSON outputs
+    deps: [build]
+    cmds:
+      - |
+        for file in sampledata/*.md; do
+          if [ -f "$file" ]; then
+            basename=$(basename "$file" .md)
+            output="sampledata/${basename}_extracted.json"
+            echo "Processing: $file -> $output"
+            ./target/reciept-invoice-ai-tool extract -i "$file" -o "$output"
+          fi
+        done

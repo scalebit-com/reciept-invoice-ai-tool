@@ -11,6 +11,9 @@ type ReceiptInvoiceInfo struct {
 	// DocumentType is always present and classifies the document
 	DocumentType string `json:"document_type" jsonschema:"enum=None,enum=Invoice,enum=Receipt" jsonschema_description:"Classification of the document as None, Invoice, or Receipt"`
 	
+	// Description is a mandatory accountant-friendly categorization of the document/service
+	Description string `json:"description" jsonschema:"maxLength=50" jsonschema_description:"Mandatory accountant-friendly description: for None documents describe what it's about, for Invoice/Receipt provide generic service category (e.g., 'AI Services', 'Cloud Services'). Max 50 characters."`
+	
 	// Company is the entity offering the service and requesting payment (nullable)
 	Company *string `json:"company" jsonschema_description:"The company that owns the service being offered and is requesting payment, null if not found"`
 	
