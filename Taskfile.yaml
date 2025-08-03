@@ -1,0 +1,8 @@
+version: '3'
+
+tasks:
+  build:
+    desc: Build the Go application
+    cmds:
+      - mkdir -p target
+      - go build -o target/reciept-invoice-ai-tool main.go
