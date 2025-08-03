@@ -20,13 +20,16 @@ A CLI tool to extract structured information from text files or markdown files c
 - 📝 Mandatory output file specification
 - 🖨️ Print-optimized HTML reports with professional styling
 - 📄 Auto-generated filesystem-safe filename suggestions
+- 🐳 Docker support with multi-stage builds (42.8MB image)
+- 📦 Container registry integration
 
 ## Installation
 
 ### Prerequisites
 
-- Go 1.24.2 or higher
+- Go 1.24.2 or higher (for building from source)
 - [Task](https://taskfile.dev/) (optional, for development)
+- Docker (for containerized usage)
 - OpenAI API key
 
 ### Build from Source
@@ -58,6 +61,18 @@ go build -o target/reciept-invoice-ai-tool main.go
 
 4. The binary will be available in the `target/` directory.
 
+### Using Docker
+
+You can use the pre-built Docker image without installing Go:
+
+```bash
+# Pull the latest image
+docker pull perarneng/reciept-invoice-ai-tool:latest
+
+# Or use a specific version
+docker pull perarneng/reciept-invoice-ai-tool:2.1.0
+```
+
 ## Usage
 
 The tool uses a Cobra-based CLI with structured commands:
@@ -88,6 +103,26 @@ The tool uses a Cobra-based CLI with structured commands:
 # Show command help
 ./target/reciept-invoice-ai-tool extract --help
 ./target/reciept-invoice-ai-tool htmloverview --help
+```
+
+### Docker Usage
+
+The same commands work with Docker. You need to mount your working directory and pass environment variables:
+
+```bash
+# Show help
+docker run --rm perarneng/reciept-invoice-ai-tool:latest --help
+
+# Extract from receipt/invoice file using Docker
+docker run --rm -v $(pwd):/app/data \
+  -e OPENAI_KEY="your-api-key" \
+  perarneng/reciept-invoice-ai-tool:latest extract \
+  -i /app/data/receipt.md -o /app/data/output.json
+
+# Generate HTML overview using Docker
+docker run --rm -v $(pwd):/app/data \
+  perarneng/reciept-invoice-ai-tool:latest htmloverview \
+  -i /app/data/output.json -o /app/data/overview.html
 ```
 
 ### Command Flags
@@ -349,6 +384,11 @@ task build
 # Process all sample MD files and generate JSON and HTML outputs
 task run
 
+# Docker tasks
+task docker-build    # Build Docker image with version tags
+task docker-push     # Push to registry (both latest and version tags)
+task docker-run      # Process all sample files using Docker (equivalent to task run)
+
 # Run tests (when implemented)
 task test
 
@@ -392,6 +432,9 @@ The project uses [Task](https://taskfile.dev/) for build automation. The main ta
 - ✅ **File Existence Protection** - Graceful warnings when output files already exist
 - ✅ **Git Ignore Patterns** - Generated files are properly excluded from version control
 - ✅ **SuggestedFileName Field** - Auto-generated filesystem-safe filename suggestions
+- ✅ **Docker Support** - Multi-stage builds with minimal 42.8MB image size
+- ✅ **Container Registry** - Published to `perarneng/reciept-invoice-ai-tool`
+- ✅ **Docker Build Automation** - Task-based Docker build and push workflows
 
 ## Contributing
 

@@ -23,6 +23,23 @@ go build -o target/reciept-invoice-ai-tool main.go
 
 Build output goes to `target/` directory which is git-ignored.
 
+### Docker Support
+
+Docker support is available with the same functionality as the regular CLI:
+
+```bash
+# Build Docker image with version tags
+task docker-build
+
+# Push to registry (pushes both latest and version tags)
+task docker-push
+
+# Process all sample files using Docker container (equivalent to task run)
+task docker-run
+```
+
+The Docker image is built using multi-stage builds for minimal size (42.8MB) and security best practices.
+
 ## Current Architecture
 
 - **Language**: Go 1.24.2
@@ -75,6 +92,26 @@ The tool implements a Cobra-based CLI with the `extract` and `htmloverview` comm
 ./target/reciept-invoice-ai-tool --help
 ./target/reciept-invoice-ai-tool extract --help
 ./target/reciept-invoice-ai-tool htmloverview --help
+```
+
+### Docker Usage
+
+The same commands work with Docker:
+
+```bash
+# Extract using Docker
+docker run --rm -v $(pwd):/app/data \
+  -e OPENAI_KEY="your-api-key" \
+  perarneng/reciept-invoice-ai-tool:latest extract \
+  -i /app/data/receipt.md -o /app/data/output.json
+
+# Generate HTML overview using Docker
+docker run --rm -v $(pwd):/app/data \
+  perarneng/reciept-invoice-ai-tool:latest htmloverview \
+  -i /app/data/output.json -o /app/data/overview.html
+
+# Show help
+docker run --rm perarneng/reciept-invoice-ai-tool:latest --help
 ```
 
 ### Command Flags
@@ -277,3 +314,7 @@ The HTML template (`cmd/overview-template.html`) is embedded in the binary using
 - ✅ File existence protection with graceful warnings
 - ✅ Git ignore patterns for generated files
 - ✅ SuggestedFileName field with auto-generated filesystem-safe filenames
+- ✅ Docker support with multi-stage builds
+- ✅ Docker registry integration (perarneng/reciept-invoice-ai-tool)
+- ✅ Automated Docker build and push via Task
+- ✅ Docker equivalents for all CLI operations

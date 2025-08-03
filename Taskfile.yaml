@@ -27,3 +27,45 @@ tasks:
             fi
           fi
         done
+
+  docker-build:
+    desc: Build Docker image with version tags
+    cmds:
+      - |
+        VERSION=$(cat version.txt)
+        docker build -t perarneng/reciept-invoice-ai-tool:latest -t perarneng/reciept-invoice-ai-tool:${VERSION} .
+        
+  docker-push:
+    desc: Push Docker image to registry
+    deps: [docker-build]
+    cmds:
+      - |
+        VERSION=$(cat version.txt)
+        docker push perarneng/reciept-invoice-ai-tool:latest
+        docker push perarneng/reciept-invoice-ai-tool:${VERSION}
+        
+  docker-run:
+    desc: Process all sample MD files using Docker container (equivalent to run task)
+    deps: [docker-build]
+    cmds:
+      - |
+        source .env 2>/dev/null || true
+        for file in sampledata/*.md; do
+          if [ -f "$file" ]; then
+            basename=$(basename "$file" .md)
+            json_output="sampledata/${basename}_docker_extracted.json"
+            html_output="sampledata/${basename}_docker_extracted.html"
+            echo "Processing with Docker: $file -> $json_output"
+            docker run --rm -v $(pwd):/app/data \
+              -e OPENAI_KEY="$OPENAI_KEY" \
+              -e OPENAI_MODEL="$OPENAI_MODEL" \
+              perarneng/reciept-invoice-ai-tool:latest extract -i /app/data/"$file" -o /app/data/"$json_output"
+            if [ $? -eq 0 ]; then
+              echo "Generating HTML with Docker: $json_output -> $html_output"
+              docker run --rm -v $(pwd):/app/data \
+                perarneng/reciept-invoice-ai-tool:latest htmloverview -i /app/data/"$json_output" -o /app/data/"$html_output"
+            else
+              echo "Skipping HTML generation due to extraction failure"
+            fi
+          fi
+        done
