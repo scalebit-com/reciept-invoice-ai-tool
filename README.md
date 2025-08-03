@@ -5,16 +5,18 @@ A CLI tool to extract structured information from text files or markdown files c
 ## Features
 
 - 📄 Extract data from text (.txt) and markdown (.md) files
-- 🤖 AI-powered parsing of receipt and invoice information
-- 📊 Output structured JSON format
-- ⚡ Fast CLI interface
+- 🤖 AI-powered parsing of receipt and invoice information (planned)
+- 📊 Output structured JSON format (planned)
+- ⚡ Fast CLI interface with Cobra framework
+- 🎨 Colored logging with timestamps
 - 🔧 Easy to build and deploy
+- ✅ Comprehensive file validation (existence, binary detection, size limits)
 
 ## Installation
 
 ### Prerequisites
 
-- Go 1.19 or higher
+- Go 1.24.2 or higher
 - [Task](https://taskfile.dev/) (optional, for development)
 
 ### Build from Source
@@ -38,19 +40,36 @@ go build -o target/reciept-invoice-ai-tool main.go
 
 ## Usage
 
+The tool uses a Cobra-based CLI with structured commands:
+
 ```bash
-./target/reciept-invoice-ai-tool [options] <input-file>
+# Show help
+./target/reciept-invoice-ai-tool --help
+
+# Extract from receipt/invoice file
+./target/reciept-invoice-ai-tool extract -i <input-file>
 ```
 
-### Basic Example
+### Basic Examples
 
 ```bash
 # Process a receipt text file
-./target/reciept-invoice-ai-tool receipt.txt
+./target/reciept-invoice-ai-tool extract -i receipt.txt
 
 # Process a markdown file with receipt data
-./target/reciept-invoice-ai-tool invoice.md
+./target/reciept-invoice-ai-tool extract -i invoice.md
+
+# Show extract command help
+./target/reciept-invoice-ai-tool extract --help
 ```
+
+### File Validation
+
+The tool performs comprehensive validation on input files:
+- ✅ **File existence** - errors and exits if file doesn't exist
+- ✅ **Binary detection** - errors and exits if file is binary
+- ✅ **Size limits** - errors and exits if file > 200KB
+- ⚠️ **Extension check** - warns for non-.txt/.md files but continues
 
 ## Input Format
 
@@ -91,7 +110,9 @@ Items:
 
 ## Output Format
 
-The tool outputs structured JSON containing extracted information:
+**Note: JSON output functionality is planned for future implementation.**
+
+The tool will output structured JSON containing extracted information:
 
 ```json
 {
@@ -122,6 +143,16 @@ The tool outputs structured JSON containing extracted information:
 }
 ```
 
+## Current Implementation Status
+
+- ✅ **CLI Framework** - Complete Cobra-based command structure
+- ✅ **Logging System** - Color-coded, timestamped logging inspired by getgmail
+- ✅ **File Validation** - Comprehensive input file validation
+- ✅ **Error Handling** - Proper error handling and user feedback
+- ⏳ **Extraction Logic** - Planned for future implementation
+- ⏳ **JSON Output** - Planned for future implementation
+- ⏳ **AI Integration** - Planned for future implementation
+
 ## Development
 
 ### Available Tasks
@@ -140,15 +171,26 @@ task clean
 ### Project Structure
 
 ```
-.
-├── README.md
-├── LICENSE
-├── go.mod
-├── main.go
-├── Taskfile.yaml
-├── .gitignore
-└── target/          # Build output (git-ignored)
+├── cmd/                    # Cobra CLI commands
+│   ├── root.go            # Root command and CLI setup
+│   └── extract.go         # Extract command implementation
+├── pkg/
+│   ├── interfaces/        # Interface definitions
+│   │   └── logger.go      # Logger interface
+│   └── logger/           # Logging implementation
+│       └── logger.go     # ColorLogger with timestamped output
+├── sampledata/           # Sample receipt/invoice files
+├── target/              # Build output (git-ignored)
+├── main.go              # Application entry point
+├── Taskfile.yaml        # Build automation
+├── go.mod               # Go module dependencies
+└── README.md
 ```
+
+### Dependencies
+
+- `github.com/spf13/cobra` - CLI framework
+- `github.com/fatih/color` - Terminal color output
 
 ### Building
 

@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
+import "github.com/scalebit-com/reciept-invoice-ai-tool/cmd"
 
 func main() {
-	fmt.Println("Hello World")
+	cmd.Execute()
 }
