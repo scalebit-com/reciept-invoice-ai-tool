@@ -2,11 +2,13 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
+	"github.com/scalebit-com/reciept-invoice-ai-tool/pkg/ai"
 	"github.com/scalebit-com/reciept-invoice-ai-tool/pkg/interfaces"
 )
 
@@ -20,18 +22,21 @@ var extractCmd = &cobra.Command{
 The tool will parse the file and output structured JSON with receipt/invoice details.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		inputFile, _ := cmd.Flags().GetString("input")
-		return runExtract(inputFile, logger)
+		outputFile, _ := cmd.Flags().GetString("output")
+		return runExtract(inputFile, outputFile, logger)
 	},
 }
 
 func init() {
 	rootCmd.AddCommand(extractCmd)
 	extractCmd.Flags().StringP("input", "i", "", "Path to the input file (required)")
+	extractCmd.Flags().StringP("output", "o", "", "Path to the output JSON file (required)")
 	extractCmd.MarkFlagRequired("input")
+	extractCmd.MarkFlagRequired("output")
 }
 
 // runExtract handles the extract command logic
-func runExtract(inputFile string, log interfaces.Logger) error {
+func runExtract(inputFile string, outputFile string, log interfaces.Logger) error {
 	log.Info("Starting receipt/invoice extraction for file: %s", inputFile)
 
 	// Check if file exists
@@ -73,9 +78,51 @@ func runExtract(inputFile string, log interfaces.Logger) error {
 
 	log.Info("File validation successful")
 	log.Info("File: %s, Size: %d bytes, Type: text", inputFile, fileInfo.Size())
+	log.Info("Output will be written to: %s", outputFile)
 
-	// TODO: Implement actual extraction logic here
-	log.Info("Extraction logic not yet implemented - placeholder for future development")
+	// Initialize OpenAI provider (it handles its own config)
+	aiProvider, err := ai.NewOpenAIAIProvider(log)
+	if err != nil {
+		log.Error("Failed to initialize AI provider: %v", err)
+		return fmt.Errorf("failed to initialize AI provider: %w", err)
+	}
+
+	// Read file content
+	content, err := os.ReadFile(inputFile)
+	if err != nil {
+		log.Error("Failed to read file %s: %v", inputFile, err)
+		return fmt.Errorf("failed to read file: %w", err)
+	}
+
+	log.Info("Processing document with AI provider...")
+
+	// Extract information using AI
+	result, err := aiProvider.GetReceiptInvoiceInfo(string(content))
+	if err != nil {
+		log.Error("Failed to extract information: %v", err)
+		return fmt.Errorf("failed to extract information: %w", err)
+	}
+
+	log.Info("Successfully extracted information from document")
+
+	// Convert result to JSON
+	jsonOutput, err := json.MarshalIndent(result, "", "  ")
+	if err != nil {
+		log.Error("Failed to marshal result to JSON: %v", err)
+		return fmt.Errorf("failed to marshal result: %w", err)
+	}
+
+	// Output the JSON result to console
+	fmt.Println(string(jsonOutput))
+
+	// Write JSON to output file
+	err = os.WriteFile(outputFile, jsonOutput, 0644)
+	if err != nil {
+		log.Error("Failed to write output file %s: %v", outputFile, err)
+		return fmt.Errorf("failed to write output file: %w", err)
+	}
+
+	log.Info("Successfully wrote JSON output to %s", outputFile)
 
 	return nil
 }
@@ -96,20 +143,35 @@ func isBinaryFile(filename string) (bool, error) {
 	}
 
 	// Check for null bytes which typically indicate binary content
+	// But skip isolated null bytes that might be encoding issues
+	nullCount := 0
 	for i := 0; i < n; i++ {
 		if buffer[i] == 0 {
-			return true, nil
+			nullCount++
+			// Allow a few null bytes (could be encoding issues)
+			// but many null bytes indicate binary
+			if nullCount > 3 {
+				return true, nil
+			}
 		}
 	}
 
+	// Reset file to beginning for additional check
+	file.Seek(0, 0)
+	
 	// Additional check: scan for non-printable characters
 	scanner := bufio.NewScanner(file)
 	if scanner.Scan() {
 		text := scanner.Text()
+		nonPrintableCount := 0
 		for _, r := range text {
 			// Check for control characters (except tab, newline, carriage return)
 			if r < 32 && r != 9 && r != 10 && r != 13 {
-				return true, nil
+				nonPrintableCount++
+				// Allow some non-printable chars (could be special chars)
+				if nonPrintableCount > 5 {
+					return true, nil
+				}
 			}
 		}
 	}

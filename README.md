@@ -1,16 +1,19 @@
 # Receipt Invoice AI Tool
 
-A CLI tool to extract structured information from text files or markdown files containing receipt data and output it as structured JSON.
+A CLI tool to extract structured information from text files or markdown files containing receipt and invoice data, powered by OpenAI, and output it as structured JSON.
 
 ## Features
 
 - 📄 Extract data from text (.txt) and markdown (.md) files
-- 🤖 AI-powered parsing of receipt and invoice information (planned)
-- 📊 Output structured JSON format (planned)
+- 🤖 AI-powered parsing using OpenAI with structured outputs
+- 📊 Output structured JSON format with document classification
 - ⚡ Fast CLI interface with Cobra framework
-- 🎨 Colored logging with timestamps
+- 🎨 Colored logging with timestamps and detailed AI interaction logs
 - 🔧 Easy to build and deploy
 - ✅ Comprehensive file validation (existence, binary detection, size limits)
+- 💰 Currency conversion to Swedish cents (öre)
+- 🏢 Company extraction from financial documents
+- 📝 Mandatory output file specification
 
 ## Installation
 
@@ -18,6 +21,7 @@ A CLI tool to extract structured information from text files or markdown files c
 
 - Go 1.24.2 or higher
 - [Task](https://taskfile.dev/) (optional, for development)
+- OpenAI API key
 
 ### Build from Source
 
@@ -27,7 +31,14 @@ git clone https://github.com/scalebit-com/reciept-invoice-ai-tool.git
 cd reciept-invoice-ai-tool
 ```
 
-2. Build the application:
+2. Set up environment variables:
+```bash
+# Create .env file with your OpenAI API key
+echo "OPENAI_KEY=sk-proj-your-actual-api-key-here" > .env
+echo "OPENAI_MODEL=gpt-4o-2024-08-06" >> .env
+```
+
+3. Build the application:
 ```bash
 # Using Task (recommended)
 task build
@@ -36,7 +47,7 @@ task build
 go build -o target/reciept-invoice-ai-tool main.go
 ```
 
-3. The binary will be available in the `target/` directory.
+4. The binary will be available in the `target/` directory.
 
 ## Usage
 
@@ -46,30 +57,57 @@ The tool uses a Cobra-based CLI with structured commands:
 # Show help
 ./target/reciept-invoice-ai-tool --help
 
-# Extract from receipt/invoice file
-./target/reciept-invoice-ai-tool extract -i <input-file>
+# Extract from receipt/invoice file (both input and output files are required)
+./target/reciept-invoice-ai-tool extract -i <input-file> -o <output-file>
 ```
 
 ### Basic Examples
 
 ```bash
 # Process a receipt text file
-./target/reciept-invoice-ai-tool extract -i receipt.txt
+./target/reciept-invoice-ai-tool extract -i receipt.txt -o receipt.json
 
 # Process a markdown file with receipt data
-./target/reciept-invoice-ai-tool extract -i invoice.md
+./target/reciept-invoice-ai-tool extract -i invoice.md -o invoice.json
 
 # Show extract command help
 ./target/reciept-invoice-ai-tool extract --help
 ```
 
+### Command Flags
+
+- `-i, --input` (required): Path to the input file
+- `-o, --output` (required): Path to the output JSON file
+
 ### File Validation
 
 The tool performs comprehensive validation on input files:
 - ✅ **File existence** - errors and exits if file doesn't exist
-- ✅ **Binary detection** - errors and exits if file is binary
+- ✅ **Binary detection** - errors and exits if file is binary (with tolerance for occasional null bytes)
 - ✅ **Size limits** - errors and exits if file > 200KB
 - ⚠️ **Extension check** - warns for non-.txt/.md files but continues
+
+## Environment Configuration
+
+### Required Environment Variables
+
+- `OPENAI_KEY`: Your OpenAI API key (required)
+- `OPENAI_MODEL`: Model to use (optional, defaults to `gpt-4o-2024-08-06`)
+
+### Configuration Methods
+
+1. **Using .env file** (recommended):
+```bash
+# Create .env file in the project directory
+echo "OPENAI_KEY=sk-proj-your-actual-api-key-here" > .env
+echo "OPENAI_MODEL=gpt-4o-2024-08-06" >> .env
+```
+
+2. **Using environment variables**:
+```bash
+export OPENAI_KEY="sk-proj-your-actual-api-key-here"
+export OPENAI_MODEL="gpt-4o-2024-08-06"
+```
 
 ## Input Format
 
@@ -77,81 +115,128 @@ The tool accepts text and markdown files containing receipt or invoice informati
 
 ### Text File Format
 ```
-Store: Best Buy
-Date: 2024-01-15
-Total: $299.99
+Receipt
 
-Items:
-- iPhone Cable - $19.99
-- Phone Case - $24.99
-- Screen Protector - $14.99
-- Tax: $24.00
+Invoice number D9F68A38-0009
+
+Date paid
+August 2, 2025
+
+Anthropic, PBC
+548 Market Street
+San Francisco, California 94104
+
+€95.37 paid on August 2, 2025
+
+Description
+Max plan - 5x
+Aug 2 – Sep 2, 2025
 ```
 
 ### Markdown Format
 ```markdown
-# Receipt - Electronics Store
+# Receipt - Anthropic, PBC
 
-**Date:** 2024-01-15  
-**Store:** Best Buy  
-**Location:** 123 Main St, City, State  
+**Date:** August 2, 2025  
+**Invoice:** D9F68A38-0009  
+**Company:** Anthropic, PBC  
 
-## Items
-| Item | Quantity | Price |
-|------|----------|-------|
-| iPhone Cable | 1 | $19.99 |
-| Phone Case | 1 | $24.99 |
-| Screen Protector | 1 | $14.99 |
+## Service Description
+Max plan - 5x subscription for Aug 2 – Sep 2, 2025
 
-**Subtotal:** $59.97  
-**Tax:** $4.80  
-**Total:** $64.77
+**Total:** €95.37
 ```
 
 ## Output Format
 
-**Note: JSON output functionality is planned for future implementation.**
-
-The tool will output structured JSON containing extracted information:
+The tool outputs structured JSON containing extracted information:
 
 ```json
 {
-  "store_name": "Best Buy",
-  "date": "2024-01-15",
-  "location": "123 Main St, City, State",
-  "items": [
-    {
-      "name": "iPhone Cable",
-      "quantity": 1,
-      "price": 19.99
-    },
-    {
-      "name": "Phone Case", 
-      "quantity": 1,
-      "price": 24.99
-    },
-    {
-      "name": "Screen Protector",
-      "quantity": 1,
-      "price": 14.99
-    }
-  ],
-  "subtotal": 59.97,
-  "tax": 4.80,
-  "total": 64.77,
-  "currency": "USD"
+  "document_type": "Receipt",
+  "company": "Anthropic, PBC",
+  "date_issued": "2025-08-02",
+  "service_description": "Max plan - 5x subscription",
+  "se_cent_amount": 109677
 }
 ```
 
-## Current Implementation Status
+### Field Descriptions
 
-- ✅ **CLI Framework** - Complete Cobra-based command structure
-- ✅ **Logging System** - Color-coded, timestamped logging inspired by getgmail
-- ✅ **File Validation** - Comprehensive input file validation
-- ✅ **Error Handling** - Proper error handling and user feedback
-- ⏳ **Extraction Logic** - Planned for future implementation
-- ⏳ **JSON Output** - Planned for future implementation
-- ⏳ **AI Integration** - Planned for future implementation
+- **`document_type`**: Always present - `"None"` (not financial), `"Invoice"`, or `"Receipt"`
+- **`company`**: Optional - The company offering the service and requesting payment
+- **`date_issued`**: Optional - Date in YYYY-MM-DD format
+- **`service_description`**: Optional - Description of services or items
+- **`se_cent_amount`**: Optional - Amount in Swedish cents (öre), where last 2 digits are cents
+
+### Currency Handling
+
+The tool converts all currencies to Swedish cents (öre):
+- **SEK amounts**: multiply by 100 (95.37 SEK = 9537 öre)
+- **EUR amounts**: convert using approximate rate (1 EUR ≈ 11.5 SEK), then to öre
+- **Other currencies**: convert to SEK first, then to öre
+
+## Logging
+
+The tool provides comprehensive logging with colored, timestamped output:
+
+```
+[2025-08-03 21:03:43] [INFO] Starting receipt/invoice extraction for file: receipt.md
+[2025-08-03 21:03:43] [INFO] File validation successful
+[2025-08-03 21:03:43] [INFO] Output will be written to: output.json
+[2025-08-03 21:03:43] [INFO] Using OpenAI model: gpt-4o-2024-08-06
+[2025-08-03 21:03:43] [INFO] OpenAI API call successful (took 4.88s)
+[2025-08-03 21:03:43] [INFO] Token usage - Prompt: 765, Completion: 48, Total: 813
+[2025-08-03 21:03:43] [INFO] Extracted document type: Receipt
+[2025-08-03 21:03:43] [INFO] Extracted company: Anthropic, PBC
+[2025-08-03 21:03:43] [INFO] Successfully wrote JSON output to output.json
+```
+
+### Log Levels
+- **INFO**: Green - progress updates, successful operations
+- **ERROR**: Red - operation failures with context
+- **WARN**: Yellow - non-critical issues (e.g., missing OPENAI_MODEL)
+- **DEBUG**: Cyan - detailed debugging information
+
+## Architecture
+
+### AI Provider Pattern
+
+The system uses a provider pattern for AI services, making it easy to add new providers:
+
+```go
+type AIProvider interface {
+    GetReceiptInvoiceInfo(content string) (*ReceiptInvoiceInfo, error)
+}
+```
+
+Current implementation:
+- **OpenAI Provider**: Uses structured outputs with JSON schema validation
+- **Future providers**: Could include Anthropic Claude, local models, etc.
+
+### Project Structure
+
+```
+├── cmd/                    # Cobra CLI commands
+│   ├── root.go            # Root command and CLI setup
+│   └── extract.go         # Extract command implementation
+├── pkg/
+│   ├── interfaces/        # Interface definitions
+│   │   ├── logger.go      # Logger interface
+│   │   └── ai_provider.go # AI provider interface and data structures
+│   ├── logger/           # Logging implementation
+│   │   └── logger.go     # ColorLogger with timestamped output
+│   ├── ai/               # AI provider implementations
+│   │   └── openai_provider.go # OpenAI provider with structured outputs
+│   └── config/           # Configuration management
+│       └── config.go     # Generic configuration (provider-agnostic)
+├── sampledata/           # Sample receipt/invoice files and extracted JSON
+├── target/              # Build output (git-ignored)
+├── main.go              # Application entry point
+├── Taskfile.yaml        # Build automation
+├── .env                 # Environment variables (git-ignored)
+└── version.txt          # Current version: 1.2.0
+```
 
 ## Development
 
@@ -168,35 +253,33 @@ task test
 task clean
 ```
 
-### Project Structure
-
-```
-├── cmd/                    # Cobra CLI commands
-│   ├── root.go            # Root command and CLI setup
-│   └── extract.go         # Extract command implementation
-├── pkg/
-│   ├── interfaces/        # Interface definitions
-│   │   └── logger.go      # Logger interface
-│   └── logger/           # Logging implementation
-│       └── logger.go     # ColorLogger with timestamped output
-├── sampledata/           # Sample receipt/invoice files
-├── target/              # Build output (git-ignored)
-├── main.go              # Application entry point
-├── Taskfile.yaml        # Build automation
-├── go.mod               # Go module dependencies
-└── README.md
-```
-
 ### Dependencies
 
 - `github.com/spf13/cobra` - CLI framework
 - `github.com/fatih/color` - Terminal color output
+- `github.com/openai/openai-go` - OpenAI API client
+- `github.com/invopop/jsonschema` - JSON schema generation for structured outputs
+- `github.com/joho/godotenv` - Environment variable loading from .env files
 
 ### Building
 
 The project uses [Task](https://taskfile.dev/) for build automation. The main tasks are defined in `Taskfile.yaml`:
 
 - `task build`: Compiles the Go application to `target/reciept-invoice-ai-tool`
+
+## Implementation Status
+
+- ✅ **CLI Framework** - Complete Cobra-based command structure
+- ✅ **Logging System** - Color-coded, timestamped logging with AI interaction details
+- ✅ **File Validation** - Comprehensive input file validation
+- ✅ **Error Handling** - Proper error handling and user feedback
+- ✅ **OpenAI Integration** - Structured outputs with JSON schema validation
+- ✅ **JSON Output** - Output to both console and specified file
+- ✅ **Environment Configuration** - .env file support and environment variables
+- ✅ **Document Classification** - Automatic classification of document types
+- ✅ **Company Extraction** - Extract company information from financial documents
+- ✅ **Currency Conversion** - Convert all currencies to Swedish cents (öre)
+- ✅ **Provider Pattern** - Extensible architecture for multiple AI providers
 
 ## Contributing
 
