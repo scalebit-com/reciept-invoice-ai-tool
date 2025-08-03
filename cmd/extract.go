@@ -39,6 +39,12 @@ func init() {
 func runExtract(inputFile string, outputFile string, log interfaces.Logger) error {
 	log.Info("Starting receipt/invoice extraction for file: %s", inputFile)
 
+	// Check if output file already exists
+	if _, err := os.Stat(outputFile); err == nil {
+		log.Warn("Output file already exists: %s", outputFile)
+		return nil
+	}
+
 	// Check if file exists
 	if _, err := os.Stat(inputFile); os.IsNotExist(err) {
 		log.Error("File does not exist: %s", inputFile)

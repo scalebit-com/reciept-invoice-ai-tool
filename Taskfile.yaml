@@ -8,15 +8,22 @@ tasks:
       - go build -o target/reciept-invoice-ai-tool main.go
 
   run:
-    desc: Process all sample MD files and generate JSON outputs
+    desc: Process all sample MD files and generate JSON and HTML outputs
     deps: [build]
     cmds:
       - |
         for file in sampledata/*.md; do
           if [ -f "$file" ]; then
             basename=$(basename "$file" .md)
-            output="sampledata/${basename}_extracted.json"
-            echo "Processing: $file -> $output"
-            ./target/reciept-invoice-ai-tool extract -i "$file" -o "$output"
+            json_output="sampledata/${basename}_extracted.json"
+            html_output="sampledata/${basename}_extracted.html"
+            echo "Processing: $file -> $json_output"
+            ./target/reciept-invoice-ai-tool extract -i "$file" -o "$json_output"
+            if [ $? -eq 0 ]; then
+              echo "Generating HTML: $json_output -> $html_output"
+              ./target/reciept-invoice-ai-tool htmloverview -i "$json_output" -o "$html_output"
+            else
+              echo "Skipping HTML generation due to extraction failure"
+            fi
           fi
         done

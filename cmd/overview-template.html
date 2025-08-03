@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Receipt/Invoice Overview - {{.Data.Company | default "Document"}}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        /* A4 Page Setup - Single Page Only */
+        @page {
+            size: A4;
+            margin: 15mm;
+        }
+
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 10pt;
+            line-height: 1.2;
+            color: #000;
+            background: #fff;
+        }
+
+        .container {
+            max-width: 180mm; /* A4 width minus margins */
+            height: 267mm; /* A4 height minus margins */
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header - Minimal Space */
+        .header {
+            text-align: center;
+            border-bottom: 2pt solid #000;
+            padding-bottom: 3mm;
+            margin-bottom: 4mm;
+        }
+
+        .header h1 {
+            font-size: 14pt;
+            font-weight: bold;
+            margin-bottom: 1mm;
+            text-transform: uppercase;
+            letter-spacing: 1pt;
+        }
+
+        .subtitle {
+            font-size: 9pt;
+            font-style: italic;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Form Sections */
+        .section {
+            margin-bottom: 4mm;
+        }
+
+        .section-title {
+            font-size: 11pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            border-bottom: 1pt solid #000;
+            padding-bottom: 1mm;
+            margin-bottom: 2mm;
+            letter-spacing: 0.5pt;
+        }
+
+        /* Info Grid - Compact 2-column layout */
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3mm;
+            margin-bottom: 3mm;
+        }
+
+        .info-row {
+            display: flex;
+            padding: 1.5mm 0;
+        }
+
+        .info-label {
+            font-weight: bold;
+            width: 35mm;
+            flex-shrink: 0;
+            font-size: 9pt;
+        }
+
+        .info-value {
+            flex: 1;
+            font-size: 9pt;
+            padding-left: 2mm;
+        }
+
+        /* Full width rows for longer content */
+        .info-row.full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* Document type badge */
+        .document-type {
+            display: inline-block;
+            padding: 1mm 3mm;
+            border: 1pt solid #000;
+            font-weight: bold;
+            font-size: 8pt;
+            text-transform: uppercase;
+            letter-spacing: 0.5pt;
+        }
+
+        /* Financial Section - Horizontal Layout */
+        .financial-section {
+            border: 1pt solid #000;
+            padding: 3mm;
+            margin: 3mm 0;
+        }
+
+        .amounts-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4mm;
+            text-align: center;
+        }
+
+        .amount-box {
+            border: 0.5pt solid #000;
+            padding: 2mm;
+        }
+
+        .amount-label {
+            font-size: 8pt;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-bottom: 1mm;
+            padding-bottom: 0.5mm;
+        }
+
+        .amount-value {
+            font-size: 11pt;
+            font-weight: bold;
+            margin-top: 1mm;
+        }
+
+        .amount-note {
+            font-size: 7pt;
+            margin-top: 0.5mm;
+            font-style: italic;
+        }
+
+        /* ID Fields Table - Compact */
+        .id-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1pt solid #000;
+            margin-top: 2mm;
+        }
+
+        .id-table th,
+        .id-table td {
+            padding: 1.5mm 2mm;
+            text-align: left;
+            font-size: 9pt;
+        }
+
+        .id-table th {
+            background: #f0f0f0;
+            font-weight: bold;
+            text-transform: uppercase;
+            font-size: 8pt;
+        }
+
+        /* Footer */
+        .footer {
+            margin-top: auto;
+            border-top: 1pt solid #000;
+            padding-top: 2mm;
+            font-size: 8pt;
+            text-align: center;
+        }
+
+        .footer-info {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        /* Print Optimizations */
+        @media print {
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .container {
+                height: auto;
+                max-height: 267mm;
+                overflow: hidden;
+            }
+
+            /* Ensure single page */
+            * {
+                page-break-inside: avoid !important;
+            }
+
+            .section {
+                break-inside: avoid;
+            }
+
+            .financial-section {
+                break-inside: avoid;
+            }
+
+            .id-table {
+                break-inside: avoid;
+            }
+        }
+
+        /* Hide empty sections to save space */
+        .section:empty {
+            display: none;
+        }
+
+        /* Responsive fallback for very small screens */
+        @media (max-width: 600px) {
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .amounts-grid {
+                grid-template-columns: 1fr;
+                gap: 2mm;
+            }
+            
+            .footer-info {
+                flex-direction: column;
+                text-align: center;
+                gap: 1mm;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>Receipt/Invoice Overview</h1>
+            <div class="subtitle">
+                {{if .Data.Company}}{{.Data.Company}}{{else}}Document Analysis Report{{end}}
+            </div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <!-- Document Information -->
+            <div class="section">
+                <div class="section-title">Document Information</div>
+                <div class="info-grid">
+                    <div class="info-row">
+                        <div class="info-label">Type:</div>
+                        <div class="info-value">
+                            <span class="document-type">{{.Data.DocumentType}}</span>
+                        </div>
+                    </div>
+                    <div class="info-row">
+                        <div class="info-label">Description:</div>
+                        <div class="info-value">{{.Data.Description}}</div>
+                    </div>
+                    {{if .Data.Company}}
+                    <div class="info-row">
+                        <div class="info-label">Company:</div>
+                        <div class="info-value">{{.Data.Company}}</div>
+                    </div>
+                    {{end}}
+                    {{if .Data.DateIssued}}
+                    <div class="info-row">
+                        <div class="info-label">Date Issued:</div>
+                        <div class="info-value">{{.Data.DateIssued}}</div>
+                    </div>
+                    {{end}}
+                    {{if .Data.ServiceDescription}}
+                    <div class="info-row full-width">
+                        <div class="info-label">Service:</div>
+                        <div class="info-value">{{.Data.ServiceDescription}}</div>
+                    </div>
+                    {{end}}
+                </div>
+            </div>
+
+            <!-- Financial Information -->
+            {{if or .Data.SECentAmount .Data.OriginalAmount .Data.OriginalVatAmount}}
+            <div class="section">
+                <div class="section-title">Financial Information</div>
+                <div class="financial-section">
+                    <div class="amounts-grid">
+                        {{if .Data.SECentAmount}}
+                        <div class="amount-box">
+                            <div class="amount-label">Swedish Kronor</div>
+                            <div class="amount-value">{{printf "%.2f SEK" (divInt .Data.SECentAmount 100.0)}}</div>
+                            <div class="amount-note">({{.Data.SECentAmount}} öre)</div>
+                        </div>
+                        {{else}}
+                        <div class="amount-box">
+                            <div class="amount-label">Swedish Kronor</div>
+                            <div class="amount-value">—</div>
+                        </div>
+                        {{end}}
+                        
+                        {{if .Data.OriginalAmount}}
+                        <div class="amount-box">
+                            <div class="amount-label">{{if .Data.OriginalCurrency}}{{.Data.OriginalCurrency}}{{else}}Original{{end}}</div>
+                            <div class="amount-value">{{formatFloatWithCurrency .Data.OriginalAmount .Data.OriginalCurrency}}</div>
+                        </div>
+                        {{else}}
+                        <div class="amount-box">
+                            <div class="amount-label">Original Amount</div>
+                            <div class="amount-value">—</div>
+                        </div>
+                        {{end}}
+                        
+                        {{if .Data.OriginalVatAmount}}
+                        <div class="amount-box">
+                            <div class="amount-label">VAT/Tax</div>
+                            <div class="amount-value">{{formatFloatWithCurrency .Data.OriginalVatAmount .Data.OriginalCurrency}}</div>
+                        </div>
+                        {{else}}
+                        <div class="amount-box">
+                            <div class="amount-label">VAT/Tax</div>
+                            <div class="amount-value">—</div>
+                        </div>
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+            {{end}}
+
+            <!-- Identification Fields -->
+            <div class="section">
+                <div class="section-title">Identification Fields</div>
+                {{if .Data.IdFields}}
+                <table class="id-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 35%;">Field Type</th>
+                            <th style="width: 65%;">Value</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {{range .Data.IdFields}}
+                        <tr>
+                            <td>{{.Name}}</td>
+                            <td>{{.Value}}</td>
+                        </tr>
+                        {{end}}
+                    </tbody>
+                </table>
+                {{else}}
+                <div class="info-row">
+                    <div class="info-label">Status:</div>
+                    <div class="info-value">No identification fields found</div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-info">
+                <div>Generated by Receipt/Invoice AI Tool</div>
+                <div>Processed: {{.ProcessedAt}}</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

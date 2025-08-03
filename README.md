@@ -7,6 +7,7 @@ A CLI tool to extract structured information from text files or markdown files c
 - 📄 Extract data from text (.txt) and markdown (.md) files
 - 🤖 AI-powered parsing using OpenAI with structured outputs
 - 📊 Output structured JSON format with document classification
+- 🌐 Professional HTML report generation with embedded templates
 - ⚡ Fast CLI interface with Cobra framework
 - 🎨 Colored logging with timestamps and detailed AI interaction logs
 - 🔧 Easy to build and deploy
@@ -17,6 +18,7 @@ A CLI tool to extract structured information from text files or markdown files c
 - 🧾 VAT amount extraction in original currency
 - 🔢 ID field extraction (invoice numbers, receipt numbers, etc.)
 - 📝 Mandatory output file specification
+- 🖨️ Print-optimized HTML reports with professional styling
 
 ## Installation
 
@@ -46,7 +48,7 @@ echo "OPENAI_MODEL=gpt-4o-2024-08-06" >> .env
 # Using Task (recommended)
 task build
 
-# Process all sample MD files and generate JSON outputs (depends on build)
+# Process all sample MD files and generate JSON and HTML outputs (depends on build)
 task run
 
 # Or using Go directly
@@ -65,6 +67,9 @@ The tool uses a Cobra-based CLI with structured commands:
 
 # Extract from receipt/invoice file (both input and output files are required)
 ./target/reciept-invoice-ai-tool extract -i <input-file> -o <output-file>
+
+# Generate HTML overview from JSON file (both input and output files are required)
+./target/reciept-invoice-ai-tool htmloverview -i <json-file> -o <html-file>
 ```
 
 ### Basic Examples
@@ -76,22 +81,39 @@ The tool uses a Cobra-based CLI with structured commands:
 # Process a markdown file with receipt data
 ./target/reciept-invoice-ai-tool extract -i invoice.md -o invoice.json
 
-# Show extract command help
+# Generate HTML overview from JSON
+./target/reciept-invoice-ai-tool htmloverview -i receipt.json -o receipt.html
+
+# Show command help
 ./target/reciept-invoice-ai-tool extract --help
+./target/reciept-invoice-ai-tool htmloverview --help
 ```
 
 ### Command Flags
 
+**Extract Command:**
 - `-i, --input` (required): Path to the input file
 - `-o, --output` (required): Path to the output JSON file
 
+**HTML Overview Command:**
+- `-i, --input` (required): Path to the input JSON file
+- `-o, --output` (required): Path to the output HTML file
+
 ### File Validation
 
-The tool performs comprehensive validation on input files:
-- ✅ **File existence** - errors and exits if file doesn't exist
+Both commands perform comprehensive validation and file existence checks:
+
+**Extract Command Validation:**
+- ✅ **Output file existence** - warns and exits gracefully if output file already exists
+- ✅ **Input file existence** - errors and exits if input file doesn't exist
 - ✅ **Binary detection** - errors and exits if file is binary (with tolerance for occasional null bytes)
 - ✅ **Size limits** - errors and exits if file > 200KB
 - ⚠️ **Extension check** - warns for non-.txt/.md files but continues
+
+**HTML Overview Command Validation:**
+- ✅ **Output file existence** - warns and exits gracefully if output file already exists
+- ✅ **Input file existence** - errors and exits if input JSON file doesn't exist
+- ✅ **JSON validation** - errors and exits if input file is not valid JSON
 
 ## Environment Configuration
 
@@ -206,6 +228,43 @@ The tool converts all currencies to Swedish cents (öre):
 - **EUR amounts**: convert using approximate rate (1 EUR ≈ 11.5 SEK), then to öre
 - **Other currencies**: convert to SEK first, then to öre
 
+## HTML Overview Generation
+
+The `htmloverview` command generates professional HTML reports from JSON output created by the `extract` command.
+
+### Features
+
+- **Professional Design**: Clean, formal layout with Arial/Helvetica fonts and minimal styling
+- **Print Optimization**: A4-optimized CSS for perfect printing with proper page breaks
+- **Comprehensive Data Display**: Shows all extracted information in organized sections:
+  - Document information (type, description, company, date)
+  - Financial information with currency conversion display
+  - Identification fields in a professional table format
+- **Process Timestamp**: Includes generation date and time in the footer
+- **Embedded Template**: HTML template is embedded in the binary for single-file deployment
+- **Responsive Design**: Mobile-friendly layout that adapts to different screen sizes
+
+### Usage Examples
+
+```bash
+# Generate HTML from existing JSON
+./target/reciept-invoice-ai-tool htmloverview -i receipt.json -o receipt.html
+
+# The task run command automatically generates both JSON and HTML files
+task run
+```
+
+### HTML Template
+
+The HTML template (`cmd/overview-template.html`) includes:
+- Clean CSS with embedded styles for offline use
+- Formal black and white design optimized for business use
+- A4-specific media queries for optimal printing with Puppeteer
+- Responsive design for mobile devices
+- Arial/Helvetica typography with minimal borders
+
+The template is embedded in the binary using Go's `//go:embed` directive, ensuring the tool remains a single, deployable binary without external dependencies.
+
 ## Logging
 
 The tool provides comprehensive logging with colored, timestamped output:
@@ -250,7 +309,9 @@ Current implementation:
 ```
 ├── cmd/                    # Cobra CLI commands
 │   ├── root.go            # Root command and CLI setup
-│   └── extract.go         # Extract command implementation
+│   ├── extract.go         # Extract command implementation
+│   ├── htmloverview.go    # HTML overview generation command
+│   └── overview-template.html # HTML template (embedded in binary)
 ├── pkg/
 │   ├── interfaces/        # Interface definitions
 │   │   ├── logger.go      # Logger interface
@@ -266,7 +327,7 @@ Current implementation:
 ├── main.go              # Application entry point
 ├── Taskfile.yaml        # Build automation
 ├── .env                 # Environment variables (git-ignored)
-└── version.txt          # Current version: 1.3.0
+└── version.txt          # Current version: 2.0.0
 ```
 
 ## Development
@@ -277,7 +338,7 @@ Current implementation:
 # Build the application
 task build
 
-# Process all sample MD files and generate JSON outputs
+# Process all sample MD files and generate JSON and HTML outputs
 task run
 
 # Run tests (when implemented)
@@ -317,6 +378,11 @@ The project uses [Task](https://taskfile.dev/) for build automation. The main ta
 - ✅ **VAT Amount Extraction** - Extract VAT/tax amounts in original currency
 - ✅ **ID Field Extraction** - Extract identification fields (invoice numbers, receipt numbers, etc.)
 - ✅ **Provider Pattern** - Extensible architecture for multiple AI providers
+- ✅ **HTML Report Generation** - Professional, print-optimized HTML reports
+- ✅ **Embedded Templates** - Single binary deployment with embedded HTML templates
+- ✅ **Automated Pipeline** - Build process generates both JSON and HTML outputs
+- ✅ **File Existence Protection** - Graceful warnings when output files already exist
+- ✅ **Git Ignore Patterns** - Generated files are properly excluded from version control
 
 ## Contributing
 

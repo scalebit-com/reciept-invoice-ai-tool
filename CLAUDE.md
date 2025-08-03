@@ -14,7 +14,7 @@ The project uses [Task](https://taskfile.dev/) for build automation via `Taskfil
 # Build the application (creates binary in target/)
 task build
 
-# Process all sample MD files and generate JSON outputs (depends on build)
+# Process all sample MD files and generate JSON and HTML outputs (depends on build)
 task run
 
 # Direct Go build alternative
@@ -32,13 +32,16 @@ Build output goes to `target/` directory which is git-ignored.
 - **AI Provider**: OpenAI with structured outputs
 - **Logging**: Color-coded logging system inspired by getgmail
 - **Build Target**: Single binary CLI tool
+- **HTML Reporting**: Embedded Go templates for professional HTML output
 
 ### Project Structure
 
 ```
 ├── cmd/                    # Cobra CLI commands
 │   ├── root.go            # Root command and CLI setup
-│   └── extract.go         # Extract command implementation
+│   ├── extract.go         # Extract command implementation
+│   ├── htmloverview.go    # HTML overview generation command
+│   └── overview-template.html # HTML template (embedded in binary)
 ├── pkg/
 │   ├── interfaces/        # Interface definitions
 │   │   ├── logger.go      # Logger interface
@@ -54,34 +57,51 @@ Build output goes to `target/` directory which is git-ignored.
 ├── main.go              # Application entry point
 ├── Taskfile.yaml        # Build automation
 ├── .env                 # Environment variables (git-ignored)
-└── version.txt          # Current version: 1.3.0
+└── version.txt          # Current version: 2.0.0
 ```
 
 ## CLI Usage
 
-The tool implements a Cobra-based CLI with the `extract` command:
+The tool implements a Cobra-based CLI with the `extract` and `htmloverview` commands:
 
 ```bash
 # Extract from receipt/invoice file with output file (both required)
 ./target/reciept-invoice-ai-tool extract -i path/to/receipt.md -o output.json
 
+# Generate HTML overview from JSON file (both required)
+./target/reciept-invoice-ai-tool htmloverview -i output.json -o overview.html
+
 # Show help
 ./target/reciept-invoice-ai-tool --help
 ./target/reciept-invoice-ai-tool extract --help
+./target/reciept-invoice-ai-tool htmloverview --help
 ```
 
 ### Command Flags
 
+**Extract Command:**
 - `-i, --input` (required): Path to the input file
 - `-o, --output` (required): Path to the output JSON file
 
+**HTML Overview Command:**
+- `-i, --input` (required): Path to the input JSON file
+- `-o, --output` (required): Path to the output HTML file
+
 ### File Validation
 
-The `extract` command performs comprehensive validation:
-- ✅ **File existence** - errors and exits if file doesn't exist
+Both commands perform comprehensive validation and file existence checks:
+
+**Extract Command Validation:**
+- ✅ **Output file existence** - warns and exits gracefully if output file already exists
+- ✅ **Input file existence** - errors and exits if input file doesn't exist
 - ✅ **Binary detection** - errors and exits if file is binary (with tolerance for occasional null bytes)
 - ✅ **Size limits** - errors and exits if file > 200KB
 - ⚠️ **Extension check** - warns for non-.txt/.md files but continues
+
+**HTML Overview Command Validation:**
+- ✅ **Output file existence** - warns and exits gracefully if output file already exists
+- ✅ **Input file existence** - errors and exits if input JSON file doesn't exist
+- ✅ **JSON validation** - errors and exits if input file is not valid JSON
 
 ## Environment Configuration
 
@@ -199,6 +219,35 @@ type AIProvider interface {
 
 This architecture allows easy addition of other AI providers (Anthropic Claude, local models, etc.) without changing the core application logic.
 
+## HTML Overview Generation
+
+The `htmloverview` command generates professional HTML reports from JSON output:
+
+### Features
+- **Professional Design**: Clean, modern layout with embedded CSS
+- **Print Optimized**: Styles optimized for printing with proper page breaks
+- **Responsive**: Mobile-friendly design that adapts to different screen sizes
+- **Comprehensive Data Display**: Shows all extracted information in organized sections
+- **Process Timestamp**: Includes generation date and time in the footer
+- **Template Embedding**: HTML template is embedded in the binary for easy deployment
+
+### Template Structure
+- **Document Information**: Type, description, company, date
+- **Financial Information**: Amounts in original currency and Swedish kronor
+- **Identification Fields**: Table of all found ID fields
+- **Process Information**: Generation timestamp and tool information
+
+### Usage
+```bash
+# Generate HTML from existing JSON
+./target/reciept-invoice-ai-tool htmloverview -i receipt.json -o receipt.html
+
+# The task run command automatically generates both JSON and HTML files
+task run
+```
+
+The HTML template (`cmd/overview-template.html`) is embedded in the binary using Go's `//go:embed` directive, ensuring the tool remains a single, deployable binary.
+
 ## Development Status
 
 - ✅ CLI framework with Cobra
@@ -215,3 +264,8 @@ This architecture allows easy addition of other AI providers (Anthropic Claude, 
 - ✅ Original amount and currency extraction
 - ✅ VAT amount extraction in original currency
 - ✅ ID field extraction (invoice numbers, receipt numbers, etc.)
+- ✅ HTML overview generation with embedded templates
+- ✅ Professional print-optimized HTML reports
+- ✅ Automated HTML generation in build pipeline
+- ✅ File existence protection with graceful warnings
+- ✅ Git ignore patterns for generated files
