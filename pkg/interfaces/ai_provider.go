@@ -48,4 +48,8 @@ type ReceiptInvoiceInfo struct {
 	
 	// IdFields is a list of identification fields found in the document
 	IdFields []IdField `json:"id_fields" jsonschema_description:"List of identification fields found in the document (invoice numbers, receipt numbers, customer IDs, etc.). Can be empty."`
+	
+	// SuggestedFileName is a generated filename based on extracted data (populated post-processing)
+	// Format: <date>-<company>-<description>-<amount>SEK (lowercase, non-alphanumeric chars become _)
+	SuggestedFileName string `json:"suggested_filename" jsonschema:"-"`
 }

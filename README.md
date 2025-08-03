@@ -19,6 +19,7 @@ A CLI tool to extract structured information from text files or markdown files c
 - 🔢 ID field extraction (invoice numbers, receipt numbers, etc.)
 - 📝 Mandatory output file specification
 - 🖨️ Print-optimized HTML reports with professional styling
+- 📄 Auto-generated filesystem-safe filename suggestions
 
 ## Installation
 
@@ -199,7 +200,8 @@ The tool outputs structured JSON containing extracted information:
       "name": "Invoice Number",
       "value": "D8F78A38-0007"
     }
-  ]
+  ],
+  "suggested_filename": "2025_08_02-anthropic__pbc-ai_services-1097sek"
 }
 ```
 
@@ -220,6 +222,12 @@ The tool outputs structured JSON containing extracted information:
 - **`id_fields`**: Optional list of identification fields found in document:
   - Each entry has `name` (identifier type) and `value` (actual identifier)
   - Examples: Invoice Number, Receipt Number, Customer ID, Order Number
+- **`suggested_filename`**: **Auto-generated** - Filesystem-safe filename suggestion based on extracted data:
+  - Format: `<date>-<company>-<description>-<amount>SEK`
+  - All lowercase with non-alphanumeric characters replaced with `_`
+  - Amount converted from öre to SEK rounded to nearest krona
+  - Missing fields default to "unknown"
+  - Example: `2025_08_02-anthropic__pbc-ai_services-1097sek`
 
 ### Currency Handling
 
@@ -327,7 +335,7 @@ Current implementation:
 ├── main.go              # Application entry point
 ├── Taskfile.yaml        # Build automation
 ├── .env                 # Environment variables (git-ignored)
-└── version.txt          # Current version: 2.0.0
+└── version.txt          # Current version: 2.1.0
 ```
 
 ## Development
@@ -383,6 +391,7 @@ The project uses [Task](https://taskfile.dev/) for build automation. The main ta
 - ✅ **Automated Pipeline** - Build process generates both JSON and HTML outputs
 - ✅ **File Existence Protection** - Graceful warnings when output files already exist
 - ✅ **Git Ignore Patterns** - Generated files are properly excluded from version control
+- ✅ **SuggestedFileName Field** - Auto-generated filesystem-safe filename suggestions
 
 ## Contributing
 

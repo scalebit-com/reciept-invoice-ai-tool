@@ -57,7 +57,7 @@ Build output goes to `target/` directory which is git-ignored.
 ├── main.go              # Application entry point
 ├── Taskfile.yaml        # Build automation
 ├── .env                 # Environment variables (git-ignored)
-└── version.txt          # Current version: 2.0.0
+└── version.txt          # Current version: 2.1.0
 ```
 
 ## CLI Usage
@@ -174,7 +174,8 @@ The tool extracts structured information from receipts and invoices:
       "name": "Invoice Number", 
       "value": "D8F78A38-0007"
     }
-  ]
+  ],
+  "suggested_filename": "2025_08_02-anthropic__pbc-ai_services-1097sek"
 }
 ```
 
@@ -194,6 +195,12 @@ The tool extracts structured information from receipts and invoices:
 - `id_fields`: Optional list of identification fields found in document:
   - Each entry has `name` (identifier type) and `value` (actual identifier)
   - Examples: Invoice Number, Receipt Number, Customer ID, Order Number
+- `suggested_filename`: **Auto-generated** - Filesystem-safe filename suggestion based on extracted data:
+  - Format: `<date>-<company>-<description>-<amount>SEK`
+  - All lowercase with non-alphanumeric characters replaced with `_`
+  - Amount converted from öre to SEK rounded to nearest krona
+  - Missing fields default to "unknown"
+  - Example: `2025_08_02-anthropic__pbc-ai_services-1097sek`
 
 ### Currency Handling
 - SEK amounts: multiply by 100 (95.37 SEK = 9537 öre)
@@ -269,3 +276,4 @@ The HTML template (`cmd/overview-template.html`) is embedded in the binary using
 - ✅ Automated HTML generation in build pipeline
 - ✅ File existence protection with graceful warnings
 - ✅ Git ignore patterns for generated files
+- ✅ SuggestedFileName field with auto-generated filesystem-safe filenames

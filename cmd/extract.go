@@ -4,8 +4,11 @@ import (
 	"bufio"
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
+	"regexp"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/scalebit-com/reciept-invoice-ai-tool/pkg/ai"
@@ -111,6 +114,10 @@ func runExtract(inputFile string, outputFile string, log interfaces.Logger) erro
 
 	log.Info("Successfully extracted information from document")
 
+	// Generate suggested filename and populate the field
+	result.SuggestedFileName = generateSuggestedFileName(result)
+	log.Info("Generated suggested filename: %s", result.SuggestedFileName)
+
 	// Convert result to JSON
 	jsonOutput, err := json.MarshalIndent(result, "", "  ")
 	if err != nil {
@@ -131,6 +138,46 @@ func runExtract(inputFile string, outputFile string, log interfaces.Logger) erro
 	log.Info("Successfully wrote JSON output to %s", outputFile)
 
 	return nil
+}
+
+// generateSuggestedFileName creates a suggested filename from extracted data
+// Format: <date>-<company>-<description>-<amount>SEK (lowercase, non-alphanumeric chars become _)
+func generateSuggestedFileName(info *interfaces.ReceiptInvoiceInfo) string {
+	// Helper function to clean strings: lowercase and replace non-alphanumeric with _
+	cleanString := func(s string) string {
+		// Convert to lowercase
+		s = strings.ToLower(s)
+		// Replace non-alphanumeric characters with underscore
+		reg := regexp.MustCompile(`[^a-z0-9]`)
+		return reg.ReplaceAllString(s, "_")
+	}
+	
+	// Extract date (use "unknown" if not available)
+	date := "unknown"
+	if info.DateIssued != nil && *info.DateIssued != "" && *info.DateIssued != "." {
+		date = cleanString(*info.DateIssued)
+	}
+	
+	// Extract company (use "unknown" if not available)
+	company := "unknown"
+	if info.Company != nil && *info.Company != "" && *info.Company != "." {
+		company = cleanString(*info.Company)
+	}
+	
+	// Extract description (always available as it's mandatory)
+	description := cleanString(info.Description)
+	
+	// Extract amount in SEK (convert from se_cent_amount to SEK, rounded to nearest krona)
+	amountSEK := "unknown"
+	if info.SECentAmount != nil && *info.SECentAmount > 0 {
+		// Convert öre to SEK and round to nearest krona
+		sekAmount := float64(*info.SECentAmount) / 100.0
+		roundedSEK := int(math.Round(sekAmount))
+		amountSEK = fmt.Sprintf("%dsek", roundedSEK)
+	}
+	
+	// Combine all parts
+	return fmt.Sprintf("%s-%s-%s-%s", date, company, description, amountSEK)
 }
 
 // isBinaryFile checks if a file appears to be binary by examining the first 512 bytes
